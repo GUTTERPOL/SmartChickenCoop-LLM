@@ -1,12 +1,12 @@
 import ollama
-from langchain.document_loaders import DirectoryLoader, TextLoader, PyMuDFLoader
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.embeddings import OllamaEmbeddings
+from langchain_community.document_loaders import DirectoryLoader, TextLoader
+from langchain_classic.text_splitter import RecursiveCharacterTextSplitter
+from langchain_ollama import OllamaEmbeddings
 from langchain_community.vectorstores import Chroma
-from langchain.chains import RetrievalQA
+from langchain_classic.chains import retrieval_qa
 
 model_name = "qwen3:4b-instruct"
-prompt = "how do i make a cake"
+'''prompt = "how do i make a cake"
 
 response = ollama.generate(
     model=model_name,
@@ -18,7 +18,7 @@ response = ollama.generate(
     }
 )
 
-print(response.response)
+print(response.response)'''
 
 #RAG_pipeline
 #what to install
@@ -30,8 +30,8 @@ print(response.response)
 
 def load_docs(folder_path):
     txt_loader = DirectoryLoader(folder_path, glob="*.txt", loader_cls=TextLoader)
-    pdf_loader = DirectoryLoader(folder_path, glob="*.pdf", loader_cls=PyMuDFLoader)
-    documents = txt_loader.load() + pdf_loader.load()
+    #pdf_loader = DirectoryLoader(folder_path, glob="*.pdf", loader_cls=PyMuDFLoader)
+    documents = txt_loader.load() #+ pdf_loader.load()
     return documents
 
 #Splitting these documents
@@ -52,7 +52,7 @@ def create_vector_store(chunks):
 
 def build_QA_pipeline(vector_store):
     retriever = vector_store.as_retriever(search_kwargs={"k": 1}) #k is the number of relevant documents that are retrieved (how much context will the LLM receive)
-    qa_chain = RetrievalQA.from_chain_type(
+    qa_chain = retrieval_qa.from_chain_type(
         llm=ollama.Ollama(model_name="qwen3:4b-instruct"),
         chain_type="stuff", #stuff = all chunks are put together and sent to the LLM ; other options are: map_reduce (chuks are summarized), refine(stepwise), map_rerank(model ranks chunks based on relevance)
         retriever=retriever, 
@@ -65,7 +65,7 @@ documents = load_docs("test_docs")
 chunks = split_docs(documents)
 vector_store = create_vector_store(chunks)
 qa_pipeline = build_QA_pipeline(vector_store)
-query = "What is Ollama?"
+query = "Wat zijn voorbeelden van duurzame energiebronnen?"
 result = qa_pipeline.run(query)
 print("Answer:", result['result'])
 print("/nSources:", result['source_documents'])
