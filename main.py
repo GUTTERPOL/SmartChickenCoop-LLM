@@ -4,7 +4,7 @@ from langchain_classic.text_splitter import RecursiveCharacterTextSplitter
 from langchain_ollama import OllamaEmbeddings
 from langchain_community.vectorstores import Chroma
 from langchain_classic.chains import retrieval_qa
-
+from langchain_ollama.llms import OllamaLLM
 model_name = "qwen3:4b-instruct"
 '''prompt = "how do i make a cake"
 
@@ -44,20 +44,21 @@ def split_docs(documents):
 #Creating embeddings for these chunks and storing in vector database
 
 def create_vector_store(chunks):
-    embeddings = OllamaEmbeddings(model_name="qwen3:4b-instruct")
+    embeddings = OllamaEmbeddings(model="nomic-embed-text")
     vector_store = Chroma.from_documents(chunks, embeddings, persist_directory="./chroma_db")
     return vector_store
 
 # let's start building our basic pipeline 
 
 def build_QA_pipeline(vector_store):
-    retriever = vector_store.as_retriever(search_kwargs={"k": 1}) #k is the number of relevant documents that are retrieved (how much context will the LLM receive)
-    qa_chain = retrieval_qa.from_chain_type(
-        llm=ollama.Ollama(model_name="qwen3:4b-instruct"),
-        chain_type="stuff", #stuff = all chunks are put together and sent to the LLM ; other options are: map_reduce (chuks are summarized), refine(stepwise), map_rerank(model ranks chunks based on relevance)
-        retriever=retriever, 
-        return_source_documents=True
-    )
+    retriever = vector_store.as_retriever(search_kwargs={"k": 1})
+    llm = OllamaLLM(model="qwen3:4b-instruct", temperature=0.7, num_predict=500)
+    qa_chain = retrieval_qa.(
+    llm=llm,
+    chain_type="stuff",
+    retriever=retriever,
+    return_source_documents=True
+)
     return qa_chain
 
 #Putting it all together
